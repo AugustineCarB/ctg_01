@@ -48,15 +48,17 @@ All writes use `on conflict do update`, so re-running a backfill is idempotent.
 - FRED source (`src/ctg/sources/fred.py`)
 - Generic runner + loader
 - Query helper for downstream sessions
-- Series loaded from FRED (both backfilled from 2000-01-01):
-  - `FRED:DGS10` — 10Y Treasury yield, 6,884 rows
-  - `FRED:DGS2` — 2Y Treasury yield, 6,884 rows
+- FRED source (`src/ctg/sources/fred.py`) — REST API
+- Yahoo Finance source (`src/ctg/sources/yahoo.py`) — via `yfinance`
+- **Declarative series registry** at [registry.yaml](registry.yaml) — single source of truth for what we track. Currently 16 series across FRED + Yahoo.
+- `runner.py --all` reads `registry.yaml` and updates every series (idempotent)
 - Demo notebook: [notebooks/01_2s10s_demo.ipynb](notebooks/01_2s10s_demo.ipynb) — plots 10Y, 2Y, and the 2s10s spread; shades inverted periods
+
+Warehouse currently holds **~87k observations**: full US Treasury curve (DGS2/5/10/30 + T10Y2Y), short rates (DFF, SOFR), monthly macro (CPIAUCSL, UNRATE), equity indices (^GSPC, ^NDX, ^VIX), FX/commodities (DXY, gold), and crypto (BTC, ETH) — all backfilled to 2000-01-01.
 
 ## What's NOT built yet
 
-- Additional sources: Yahoo, US Treasury, CoinGecko, BLS, ECB, etc.
-- Series registry (declarative YAML listing every series we track)
+- Additional sources: US Treasury direct, CoinGecko, BLS, ECB, etc.
 - Daily cron (GitHub Actions workflow)
 - Tests
 
@@ -77,10 +79,13 @@ All writes use `on conflict do update`, so re-running a backfill is idempotent.
 # apply migrations
 PYTHONPATH=src /opt/anaconda3/bin/python scripts/apply_migrations.py
 
-# backfill a series
-PYTHONPATH=src /opt/anaconda3/bin/python -m ctg.runner --source FRED --code DGS10 --since 2000-01-01
+# update every series in registry.yaml (incremental — picks up from max(ts)+1 per series)
+PYTHONPATH=src /opt/anaconda3/bin/python -m ctg.runner --all
 
-# incremental update (default if --since omitted)
+# backfill every series from a specific date
+PYTHONPATH=src /opt/anaconda3/bin/python -m ctg.runner --all --since 2000-01-01
+
+# update a single series (ad hoc)
 PYTHONPATH=src /opt/anaconda3/bin/python -m ctg.runner --source FRED --code DGS10
 ```
 
@@ -110,7 +115,17 @@ df["2s10s"].plot(title="2s10s spread"); plt.show()
 
 ## How to add a new series (existing source)
 
-For now: just invoke the runner with the new code. Once the declarative registry exists, it'll be a single YAML entry.
+1. Add an entry to [registry.yaml](registry.yaml):
+   ```yaml
+   - id: FRED:NEWCODE
+     source: fred
+     code: NEWCODE
+     notes: short description
+   ```
+2. Run `python -m ctg.runner --all --since 2000-01-01` to backfill (existing series get incremental updates, the new one gets the full history).
+3. Commit and push — the daily cron (once built) will keep it fresh.
+
+The `id` must equal `<SOURCE-UPPERCASE>:<code>` exactly — the registry loader enforces this.
 
 ## Connection notes
 
@@ -125,6 +140,17 @@ sslmode:  require
 ```
 
 If you spin up a new project, re-discover the region with `scripts/find_pooler_region.py`.
+
+## Workspace tooling (`.claude/`)
+
+This workspace ships with custom Claude Code configuration under `.claude/`:
+
+- **[.claude/settings.json](.claude/settings.json)** — workspace permissions allowlist (Bash, Edit/Write/Read, Agent, WebFetch/Search, Google Drive MCP). Keeps routine tool calls from prompting for approval.
+- **[.claude/skills/README.md](.claude/skills/README.md)** — formatting conventions every `SKILL.md` in this workspace must follow (frontmatter shape, `$ARGUMENTS` usage, skill-vs-CLAUDE.md split).
+- **[.claude/skills/better_prompts/SKILL.md](.claude/skills/better_prompts/SKILL.md)** — `/better-prompts <raw idea>`. Refines a vague idea into a structured prompt (role/goal/context/instructions/constraints/output_format XML blocks) via a short clarifying-question loop. Use when sketching a new prompt you'll reuse — e.g. a prompt that asks a downstream agent to "chart X vs Y from the warehouse."
+- **[.claude/skills/fan_out_fan_in/SKILL.md](.claude/skills/fan_out_fan_in/SKILL.md)** — `/fan-out-fan-in <question>`. Dispatches 3–7 parallel sonnet research agents on distinct angles, then synthesizes their reports with one opus agent into a decision-ready brief. Good fit here for multi-angle CTG decisions like *"which source should we add next?"*, *"long vs wide table for intraday?"*, or *"how should we run the daily cron — GitHub Actions, Supabase cron, or a small VM?"* — questions where you want a recommendation, not five separate reports.
+
+Skills are invoked as slash commands (e.g. `/better-prompts`, `/fan-out-fan-in`). Add new ones under `.claude/skills/<kebab-name>/SKILL.md` following the README conventions.
 
 ## Open design questions to revisit
 

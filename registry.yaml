@@ -1,0 +1,90 @@
+# Series registry — the master list of everything CTG tracks.
+# To add a series: append an entry below and run:
+#   PYTHONPATH=src python -m ctg.runner --all
+# The runner will skip series already up-to-date and backfill new ones from 2000-01-01.
+
+# ─── US Treasury yields (FRED) ─────────────────────────────────────────────
+- id: FRED:DGS2
+  source: fred
+  code: DGS2
+  notes: 2-Year Treasury constant maturity yield
+
+- id: FRED:DGS5
+  source: fred
+  code: DGS5
+  notes: 5-Year Treasury constant maturity yield
+
+- id: FRED:DGS10
+  source: fred
+  code: DGS10
+  notes: 10-Year Treasury constant maturity yield
+
+- id: FRED:DGS30
+  source: fred
+  code: DGS30
+  notes: 30-Year Treasury constant maturity yield
+
+- id: FRED:T10Y2Y
+  source: fred
+  code: T10Y2Y
+  notes: 2s10s spread, pre-computed by FRED (sanity check against our own diff)
+
+# ─── Short rates (FRED) ────────────────────────────────────────────────────
+- id: FRED:DFF
+  source: fred
+  code: DFF
+  notes: Effective Federal Funds Rate, daily
+
+- id: FRED:SOFR
+  source: fred
+  code: SOFR
+  notes: Secured Overnight Financing Rate
+
+# ─── Macro indicators (FRED, monthly) ──────────────────────────────────────
+- id: FRED:CPIAUCSL
+  source: fred
+  code: CPIAUCSL
+  notes: CPI all-urban, seasonally adjusted (monthly)
+
+- id: FRED:UNRATE
+  source: fred
+  code: UNRATE
+  notes: US unemployment rate (monthly)
+
+# ─── Equity indices (Yahoo) ────────────────────────────────────────────────
+- id: YAHOO:^GSPC
+  source: yahoo
+  code: ^GSPC
+  notes: S&P 500 index, daily close
+
+- id: YAHOO:^NDX
+  source: yahoo
+  code: ^NDX
+  notes: Nasdaq 100 index, daily close
+
+- id: YAHOO:^VIX
+  source: yahoo
+  code: ^VIX
+  notes: CBOE Volatility Index
+
+# ─── FX / commodities (Yahoo) ──────────────────────────────────────────────
+- id: YAHOO:DX-Y.NYB
+  source: yahoo
+  code: DX-Y.NYB
+  notes: US Dollar Index (DXY)
+
+- id: YAHOO:GC=F
+  source: yahoo
+  code: GC=F
+  notes: Gold front-month future, daily close
+
+# ─── Crypto (Yahoo) ────────────────────────────────────────────────────────
+- id: YAHOO:BTC-USD
+  source: yahoo
+  code: BTC-USD
+  notes: Bitcoin / USD
+
+- id: YAHOO:ETH-USD
+  source: yahoo
+  code: ETH-USD
+  notes: Ethereum / USD
