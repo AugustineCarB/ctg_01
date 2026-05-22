@@ -51,16 +51,16 @@ All writes use `on conflict do update`, so re-running a backfill is idempotent.
 - FRED source (`src/ctg/sources/fred.py`) — REST API
 - Yahoo Finance source (`src/ctg/sources/yahoo.py`) — via `yfinance`
 - EIA v2 source (`src/ctg/sources/eia.py`) — energy spot prices, public-domain license
-- **Declarative series registry** at [registry.yaml](registry.yaml) — single source of truth for what we track. Currently 22 series across FRED + Yahoo + EIA.
+- Tiingo source (`src/ctg/sources/tiingo.py`) — clean-license US equities/ETFs, total-return adjClose
+- **Declarative series registry** at [registry.yaml](registry.yaml) — single source of truth for what we track. Currently 32 series across FRED + Yahoo + EIA + Tiingo.
 - `runner.py --all` reads `registry.yaml` and updates every series (idempotent)
 - Demo notebook: [notebooks/01_2s10s_demo.ipynb](notebooks/01_2s10s_demo.ipynb) — plots 10Y, 2Y, and the 2s10s spread; shades inverted periods
 
-Warehouse currently holds **~127k observations**: full US Treasury curve (DGS2/5/10/30 + T10Y2Y), short rates (DFF, SOFR), monthly macro (CPIAUCSL, UNRATE), equity indices (^GSPC, ^NDX, ^VIX), FX/commodities (DXY, gold), crypto (BTC, ETH), and **energy** (WTI, Brent, Henry Hub gas, NY gasoline, heating oil, Gulf Coast jet) — all backfilled to 2000-01-01.
+Warehouse currently holds **~188k observations**: full US Treasury curve, short rates, monthly macro (CPI, unemployment), equity indices, FX/commodities, energy spot prices, and **broad ETF exposure** (SPY, QQQ, IWM, DIA, TLT, IEF, HYG, LQD, EEM, EFA) — all backfilled to 2000-01-01.
 
 ## What's NOT built yet
 
 Macro-focused next sources (see [agent_research.md](agent_research.md), re-ranked for macro lens):
-- Tiingo — clean-license US equities/ETFs (replaces yfinance for SPY/QQQ/IWM)
 - ECB Data Portal — euro area yield curve, EUR rates, FX
 - DBnomics — umbrella adapter for 93 non-US macro providers
 - AAII / NAAIM — equity sentiment (Bull/Bear spread)
@@ -81,21 +81,25 @@ Plus:
 
 ## Running things
 
+This project runs in a dedicated conda env `ctg` (Python 3.12), isolated from other envs on the machine. The Jupyter kernel `CTG (Python 3.12)` points at the same interpreter, so notebooks and CLI runs share one environment.
+
 ```bash
-# one-time: install deps (psycopg2-binary, requests, pandas, python-dotenv already on anaconda Python)
-/opt/anaconda3/bin/pip install psycopg2-binary python-dotenv
+# one-time: create the env + register the Jupyter kernel
+/opt/anaconda3/bin/conda create -n ctg python=3.12 -y
+/opt/anaconda3/envs/ctg/bin/pip install psycopg2-binary python-dotenv pandas requests pyyaml yfinance matplotlib ipykernel
+/opt/anaconda3/envs/ctg/bin/python -m ipykernel install --user --name ctg --display-name "CTG (Python 3.12)"
 
 # apply migrations
-PYTHONPATH=src /opt/anaconda3/bin/python scripts/apply_migrations.py
+PYTHONPATH=src /opt/anaconda3/envs/ctg/bin/python scripts/apply_migrations.py
 
 # update every series in registry.yaml (incremental — picks up from max(ts)+1 per series)
-PYTHONPATH=src /opt/anaconda3/bin/python -m ctg.runner --all
+PYTHONPATH=src /opt/anaconda3/envs/ctg/bin/python -m ctg.runner --all
 
 # backfill every series from a specific date
-PYTHONPATH=src /opt/anaconda3/bin/python -m ctg.runner --all --since 2000-01-01
+PYTHONPATH=src /opt/anaconda3/envs/ctg/bin/python -m ctg.runner --all --since 2000-01-01
 
 # update a single series (ad hoc)
-PYTHONPATH=src /opt/anaconda3/bin/python -m ctg.runner --source FRED --code DGS10
+PYTHONPATH=src /opt/anaconda3/envs/ctg/bin/python -m ctg.runner --source FRED --code DGS10
 ```
 
 ## How to query (downstream agent playbook)

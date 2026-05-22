@@ -13,12 +13,12 @@ from ctg.loader import (
     upsert_series,
 )
 from ctg.registry import SeriesEntry, load as load_registry
-from ctg.sources import eia, fred, yahoo
+from ctg.sources import eia, fred, tiingo, yahoo
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("ctg")
 
-SOURCES = {"FRED": fred, "YAHOO": yahoo, "EIA": eia}
+SOURCES = {"FRED": fred, "YAHOO": yahoo, "EIA": eia, "TIINGO": tiingo}
 
 
 def run_one(source: str, native_code: str, since: date | None = None) -> int:

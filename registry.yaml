@@ -89,6 +89,57 @@
   code: ETH-USD
   notes: Ethereum / USD
 
+# ─── US equity & bond ETFs (Tiingo — clean license, total-return adj close) ─
+- id: TIINGO:SPY
+  source: tiingo
+  code: SPY
+  notes: S&P 500 ETF (replaces YAHOO:^GSPC for clean license)
+
+- id: TIINGO:QQQ
+  source: tiingo
+  code: QQQ
+  notes: Nasdaq 100 ETF
+
+- id: TIINGO:IWM
+  source: tiingo
+  code: IWM
+  notes: Russell 2000 small-cap ETF
+
+- id: TIINGO:DIA
+  source: tiingo
+  code: DIA
+  notes: Dow Jones Industrial Average ETF
+
+- id: TIINGO:TLT
+  source: tiingo
+  code: TLT
+  notes: 20+ Year Treasury Bond ETF
+
+- id: TIINGO:IEF
+  source: tiingo
+  code: IEF
+  notes: 7-10 Year Treasury Bond ETF
+
+- id: TIINGO:HYG
+  source: tiingo
+  code: HYG
+  notes: iShares High Yield Corporate Bond ETF
+
+- id: TIINGO:LQD
+  source: tiingo
+  code: LQD
+  notes: iShares Investment Grade Corporate Bond ETF
+
+- id: TIINGO:EEM
+  source: tiingo
+  code: EEM
+  notes: iShares MSCI Emerging Markets ETF
+
+- id: TIINGO:EFA
+  source: tiingo
+  code: EFA
+  notes: iShares MSCI EAFE (developed ex-US) ETF
+
 # ─── Energy spot prices (EIA — public-domain license, vs FRED's no-cache ToS)
 - id: EIA:PET.RWTC.D
   source: eia
