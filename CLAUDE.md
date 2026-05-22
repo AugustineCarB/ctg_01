@@ -50,15 +50,23 @@ All writes use `on conflict do update`, so re-running a backfill is idempotent.
 - Query helper for downstream sessions
 - FRED source (`src/ctg/sources/fred.py`) — REST API
 - Yahoo Finance source (`src/ctg/sources/yahoo.py`) — via `yfinance`
-- **Declarative series registry** at [registry.yaml](registry.yaml) — single source of truth for what we track. Currently 16 series across FRED + Yahoo.
+- EIA v2 source (`src/ctg/sources/eia.py`) — energy spot prices, public-domain license
+- **Declarative series registry** at [registry.yaml](registry.yaml) — single source of truth for what we track. Currently 22 series across FRED + Yahoo + EIA.
 - `runner.py --all` reads `registry.yaml` and updates every series (idempotent)
 - Demo notebook: [notebooks/01_2s10s_demo.ipynb](notebooks/01_2s10s_demo.ipynb) — plots 10Y, 2Y, and the 2s10s spread; shades inverted periods
 
-Warehouse currently holds **~87k observations**: full US Treasury curve (DGS2/5/10/30 + T10Y2Y), short rates (DFF, SOFR), monthly macro (CPIAUCSL, UNRATE), equity indices (^GSPC, ^NDX, ^VIX), FX/commodities (DXY, gold), and crypto (BTC, ETH) — all backfilled to 2000-01-01.
+Warehouse currently holds **~127k observations**: full US Treasury curve (DGS2/5/10/30 + T10Y2Y), short rates (DFF, SOFR), monthly macro (CPIAUCSL, UNRATE), equity indices (^GSPC, ^NDX, ^VIX), FX/commodities (DXY, gold), crypto (BTC, ETH), and **energy** (WTI, Brent, Henry Hub gas, NY gasoline, heating oil, Gulf Coast jet) — all backfilled to 2000-01-01.
 
 ## What's NOT built yet
 
-- Additional sources: US Treasury direct, CoinGecko, BLS, ECB, etc.
+Macro-focused next sources (see [agent_research.md](agent_research.md), re-ranked for macro lens):
+- Tiingo — clean-license US equities/ETFs (replaces yfinance for SPY/QQQ/IWM)
+- ECB Data Portal — euro area yield curve, EUR rates, FX
+- DBnomics — umbrella adapter for 93 non-US macro providers
+- AAII / NAAIM — equity sentiment (Bull/Bear spread)
+- Frankfurter — EM FX pairs
+
+Plus:
 - Daily cron (GitHub Actions workflow)
 - Tests
 
@@ -69,6 +77,7 @@ Warehouse currently holds **~87k observations**: full US Treasury curve (DGS2/5/
 - **Incremental by default.** If `--since` is omitted, the runner picks up from `max(ts) + 1 day` per series.
 - **Rates**: FRED allows ~120 req/min, no auth issues at our volume. Yahoo is unofficial — batch where possible.
 - **Secrets**: only in `.env` (gitignored). `supabase_info.md` is also gitignored — delete it after copying values.
+- **EIA quirk**: the v2 ``start`` query parameter is silently ignored when ``length>10``-ish. The source filters client-side instead — EIA returns rows newest→oldest, we stop paging once we cross ``start``.
 
 ## Running things
 

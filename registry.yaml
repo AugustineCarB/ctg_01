@@ -88,3 +88,34 @@
   source: yahoo
   code: ETH-USD
   notes: Ethereum / USD
+
+# ─── Energy spot prices (EIA — public-domain license, vs FRED's no-cache ToS)
+- id: EIA:PET.RWTC.D
+  source: eia
+  code: PET.RWTC.D
+  notes: WTI Cushing OK, spot FOB, daily, $/BBL — history to 1986
+
+- id: EIA:PET.RBRTE.D
+  source: eia
+  code: PET.RBRTE.D
+  notes: Brent Europe, spot FOB, daily, $/BBL
+
+- id: EIA:NG.RNGWHHD.D
+  source: eia
+  code: NG.RNGWHHD.D
+  notes: Henry Hub natural gas spot, daily, $/MMBtu
+
+- id: EIA:PET.EER_EPMRU_PF4_Y35NY_DPG.D
+  source: eia
+  code: PET.EER_EPMRU_PF4_Y35NY_DPG.D
+  notes: NY Harbor conventional gasoline regular, daily, $/gal
+
+- id: EIA:PET.EER_EPD2F_PF4_Y35NY_DPG.D
+  source: eia
+  code: PET.EER_EPD2F_PF4_Y35NY_DPG.D
+  notes: NY Harbor No.2 heating oil, daily, $/gal
+
+- id: EIA:PET.EER_EPJK_PF4_RGC_DPG.D
+  source: eia
+  code: PET.EER_EPJK_PF4_RGC_DPG.D
+  notes: US Gulf Coast jet fuel, daily, $/gal
