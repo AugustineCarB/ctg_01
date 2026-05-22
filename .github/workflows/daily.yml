@@ -1,0 +1,62 @@
+name: Daily warehouse update
+
+on:
+  schedule:
+    # 23:00 UTC = 7pm ET / 4pm PT. After US market close, before midnight in Europe.
+    - cron: "0 23 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: daily-warehouse
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: ctg.runner --all
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      SUPABASE_DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
+      SUPABASE_DB_PORT: ${{ secrets.SUPABASE_DB_PORT }}
+      SUPABASE_DB_NAME: ${{ secrets.SUPABASE_DB_NAME }}
+      SUPABASE_DB_USER: ${{ secrets.SUPABASE_DB_USER }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run ctg.runner --all
+        run: PYTHONPATH=src python -m ctg.runner --all
+
+      - name: Warehouse summary
+        if: always()
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          from ctg.config import connect
+          with connect() as c, c.cursor() as cur:
+              cur.execute("select source, count(*) from series group by source order by source;")
+              print("series by source:")
+              for s, n in cur.fetchall(): print(f"  {s}: {n}")
+              cur.execute("select count(*) from observations;")
+              print(f"total observations: {cur.fetchone()[0]:,}")
+              cur.execute(
+                  "select source, status, count(*) from runs "
+                  "where started_at > now() - interval '1 hour' "
+                  "group by source, status order by source, status;"
+              )
+              print("\nthis run:")
+              for src, status, n in cur.fetchall(): print(f"  {src} [{status}]: {n}")
+          PY

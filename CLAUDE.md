@@ -66,8 +66,37 @@ Warehouse currently holds **~270k observations** across 47 series: US Treasury c
 
 - **AAII / NAAIM sentiment** — deferred. AAII's public XLS now returns HTTP 403 (Imperva bot block) and NAAIM's current XLSX URL returns 404. Both require either fragile page scraping or a paid feed; coming back to these only if there's a strong macro signal we miss elsewhere.
 - US Treasury direct (defensive cross-check vs FRED)
-- Daily cron (GitHub Actions workflow)
 - Tests
+
+## Daily cron (GitHub Actions)
+
+[.github/workflows/daily.yml](.github/workflows/daily.yml) runs `python -m ctg.runner --all` every day at **23:00 UTC** (7pm ET / 4pm PT). One workflow refreshes every series in `registry.yaml`; monthly/quarterly series cost ~200 ms each because the runner is incremental and idempotent — no point splitting by frequency.
+
+The workflow ends with a summary step that prints `series by source`, total observation count, and a per-source success/error breakdown for the run.
+
+Trigger manually with `gh workflow run "Daily warehouse update"` or via the Actions tab.
+
+### Required GitHub secrets
+
+Mirror everything in `.env`:
+
+| Secret | Source |
+|---|---|
+| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_DB_HOST`, `SUPABASE_DB_PORT`, `SUPABASE_DB_NAME`, `SUPABASE_DB_USER`, `SUPABASE_DB_PASSWORD` | Supabase project settings |
+| `FRED_API_KEY` | fred.stlouisfed.org |
+| `EIA_API_KEY` | eia.gov/opendata/register.php |
+| `TIINGO_API_KEY` | tiingo.com account → API token |
+
+Set them all at once from local `.env`:
+
+```bash
+source .env
+for k in SUPABASE_URL SUPABASE_SERVICE_KEY SUPABASE_DB_HOST SUPABASE_DB_PORT \
+        SUPABASE_DB_NAME SUPABASE_DB_USER SUPABASE_DB_PASSWORD \
+        FRED_API_KEY EIA_API_KEY TIINGO_API_KEY; do
+  gh secret set "$k" --body "${!k}" --repo AugustineCarB/ctg_01
+done
+```
 
 ## Conventions
 
