@@ -68,6 +68,69 @@ Warehouse currently holds **~270k observations** across 47 series: US Treasury c
 - US Treasury direct (defensive cross-check vs FRED)
 - Tests
 
+## GitHub repository
+
+- **Repo**: https://github.com/AugustineCarB/ctg_01 (**public**)
+- **Default branch**: `main`
+- **gh CLI** is authenticated locally as `AugustineCarB` via keyring (HTTPS, scopes: gist, read:org, repo). All git/gh commands work without prompting.
+
+### Push hygiene
+
+The repo is public, so before every commit Claude must:
+1. Stage files **explicitly** — never `git add -A` or `git add .`. Sensitive files (`.env`, `supabase_info.md`) are gitignored but a stray `add -A` could still pull in something like a notebook checkpoint with embedded data.
+2. Run the secret-check pattern before committing:
+   ```bash
+   git diff --cached | grep -iE "(eyJ|<known-secret-prefixes>)" || echo clean
+   ```
+3. Use the heredoc-via-file pattern for multi-line commit messages with special characters: write the message to `/tmp/ctg_commit_msg.txt`, then `git commit -F /tmp/ctg_commit_msg.txt`. (Inline heredoc with backticks in the message can crash bash quoting.)
+
+### Commit message conventions
+
+- One-line title (≤72 chars), imperative mood ("Add EIA source", not "Added").
+- Wrapped body explaining **why** the change is shaped the way it is (especially workarounds — see the EIA pagination commit).
+- Trailer: `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`.
+- No `Generated with Claude Code` footer (kept terse).
+
+### Working with the workflow
+
+```bash
+# manually trigger the daily cron
+gh workflow run "Daily warehouse update" --repo AugustineCarB/ctg_01
+
+# list recent runs
+gh run list --workflow=daily.yml --repo AugustineCarB/ctg_01 --limit 5
+
+# tail a specific run
+gh run watch <RUN_ID> --repo AugustineCarB/ctg_01
+
+# read full log of a finished run
+gh run view <RUN_ID> --repo AugustineCarB/ctg_01 --log | less
+
+# inspect which series errored in the last run (uses the runs table)
+PYTHONPATH=src /opt/anaconda3/envs/ctg/bin/python -c "
+from ctg.config import connect
+with connect() as c, c.cursor() as cur:
+    cur.execute(\"select source, error_message from runs where started_at > now() - interval '2 hours' and status='error';\")
+    for row in cur.fetchall(): print(row)
+"
+```
+
+### Local-dev vs CI environment
+
+- **Local**: anaconda env `ctg` at `/opt/anaconda3/envs/ctg/bin/python` (Python 3.12).
+- **CI** (`.github/workflows/daily.yml`): fresh `actions/setup-python@v5` with Python 3.12, then `pip install -r requirements.txt`.
+- Anything new the code imports **must** be added to [requirements.txt](requirements.txt) or the cron breaks. The anaconda env is a superset; CI is the source of truth for "minimal deps to run."
+
+### Common cron failures and what to check
+
+| Symptom | Likely cause |
+|---|---|
+| `start > end` 4xx (Frankfurter, others) | Local backfill already loaded today's data; CI's `max(ts)+1` is now in the future. Source should guard with `if start > end: return`. |
+| Yahoo `possibly delisted; no price data found` for crypto on weekends/holidays | Benign — `yfinance` warning on empty-range fetch, the `0 rows upserted` is fine. |
+| `Tenant or user not found` (Postgres) | Pooler region changed or credentials rotated. Re-run `scripts/find_pooler_region.py`. |
+| `404 NOT FOUND` from DBnomics | Series ID changed upstream. Use `https://api.db.nomics.world/v22/series/<provider>/<dataset>?q=<keyword>&limit=8` to find the new code. |
+| EIA returns rows from the wrong date | EIA's `start` param is silently ignored at large `length`. Source already filters client-side; if you regress this, the symptom is "incremental run loads thousands of historical rows." |
+
 ## Daily cron (GitHub Actions)
 
 [.github/workflows/daily.yml](.github/workflows/daily.yml) runs `python -m ctg.runner --all` every day at **23:00 UTC** (7pm ET / 4pm PT). One workflow refreshes every series in `registry.yaml`; monthly/quarterly series cost ~200 ms each because the runner is incremental and idempotent — no point splitting by frequency.
