@@ -170,3 +170,81 @@
   source: eia
   code: PET.EER_EPJK_PF4_RGC_DPG.D
   notes: US Gulf Coast jet fuel, daily, $/gal
+
+# ─── Euro area rates / FX (ECB Data Portal — no auth) ──────────────────────
+- id: ECB:EXR.D.USD.EUR.SP00.A
+  source: ecb
+  code: EXR.D.USD.EUR.SP00.A
+  notes: EUR/USD reference rate, daily — ECB's canonical FX fix
+
+- id: ECB:EXR.D.GBP.EUR.SP00.A
+  source: ecb
+  code: EXR.D.GBP.EUR.SP00.A
+  notes: EUR/GBP reference rate, daily
+
+- id: ECB:EXR.D.JPY.EUR.SP00.A
+  source: ecb
+  code: EXR.D.JPY.EUR.SP00.A
+  notes: EUR/JPY reference rate, daily
+
+- id: ECB:YC.B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y
+  source: ecb
+  code: YC.B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y
+  notes: Euro area AAA government 10Y yield curve (Svensson), daily
+
+- id: ECB:YC.B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y
+  source: ecb
+  code: YC.B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y
+  notes: Euro area AAA government 2Y yield curve, daily
+
+- id: ECB:FM.D.U2.EUR.4F.KR.DFR.LEV
+  source: ecb
+  code: FM.D.U2.EUR.4F.KR.DFR.LEV
+  notes: ECB Deposit Facility Rate, daily
+
+# ─── Global macro (DBnomics — 93 providers under one roof) ─────────────────
+- id: DBNOMICS:Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20
+  source: dbnomics
+  code: Eurostat/prc_hicp_manr/M.RCH_A.CP00.EA20
+  notes: Euro Area HICP all-items, YoY % change, monthly
+
+- id: DBNOMICS:Eurostat/une_rt_m/M.SA.TOTAL.PC_ACT.T.EA20
+  source: dbnomics
+  code: Eurostat/une_rt_m/M.SA.TOTAL.PC_ACT.T.EA20
+  notes: Euro Area unemployment rate, monthly, SA (% of labour force)
+
+- id: DBNOMICS:Eurostat/namq_10_gdp/Q.CLV10_MEUR.SCA.B1GQ.EA20
+  source: dbnomics
+  code: Eurostat/namq_10_gdp/Q.CLV10_MEUR.SCA.B1GQ.EA20
+  notes: Euro Area real GDP, quarterly, chain-linked 2010 EUR M, SCA
+
+# ─── EM FX (Frankfurter — ECB reference rates, no auth) ────────────────────
+- id: FRANKFURTER:USDBRL
+  source: frankfurter
+  code: USDBRL
+  notes: USD/BRL (US dollar per Brazilian real), daily
+
+- id: FRANKFURTER:USDMXN
+  source: frankfurter
+  code: USDMXN
+  notes: USD/MXN (US dollar per Mexican peso), daily
+
+- id: FRANKFURTER:USDZAR
+  source: frankfurter
+  code: USDZAR
+  notes: USD/ZAR (US dollar per South African rand), daily
+
+- id: FRANKFURTER:USDCNY
+  source: frankfurter
+  code: USDCNY
+  notes: USD/CNY (US dollar per Chinese yuan), daily
+
+- id: FRANKFURTER:USDINR
+  source: frankfurter
+  code: USDINR
+  notes: USD/INR (US dollar per Indian rupee), daily
+
+- id: FRANKFURTER:USDTRY
+  source: frankfurter
+  code: USDTRY
+  notes: USD/TRY (US dollar per Turkish lira), daily

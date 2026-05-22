@@ -48,25 +48,24 @@ All writes use `on conflict do update`, so re-running a backfill is idempotent.
 - FRED source (`src/ctg/sources/fred.py`)
 - Generic runner + loader
 - Query helper for downstream sessions
-- FRED source (`src/ctg/sources/fred.py`) — REST API
-- Yahoo Finance source (`src/ctg/sources/yahoo.py`) — via `yfinance`
-- EIA v2 source (`src/ctg/sources/eia.py`) — energy spot prices, public-domain license
-- Tiingo source (`src/ctg/sources/tiingo.py`) — clean-license US equities/ETFs, total-return adjClose
-- **Declarative series registry** at [registry.yaml](registry.yaml) — single source of truth for what we track. Currently 32 series across FRED + Yahoo + EIA + Tiingo.
+- **Sources** (7):
+  - `fred.py` — FRED REST API
+  - `yahoo.py` — Yahoo Finance via `yfinance`
+  - `eia.py` — EIA v2 (energy spot prices, public domain)
+  - `tiingo.py` — clean-license US equities/ETFs, total-return adjClose
+  - `ecb.py` — ECB Data Portal SDMX-CSV (euro rates, FX, yield curve)
+  - `dbnomics.py` — umbrella adapter for 93 macro providers (Eurostat, IMF, BIS, OECD, ...)
+  - `frankfurter.py` — free FX rates (ECB reference rates) for EM pairs
+- **Declarative series registry** at [registry.yaml](registry.yaml) — single source of truth. Currently 47 series.
 - `runner.py --all` reads `registry.yaml` and updates every series (idempotent)
 - Demo notebook: [notebooks/01_2s10s_demo.ipynb](notebooks/01_2s10s_demo.ipynb) — plots 10Y, 2Y, and the 2s10s spread; shades inverted periods
 
-Warehouse currently holds **~188k observations**: full US Treasury curve, short rates, monthly macro (CPI, unemployment), equity indices, FX/commodities, energy spot prices, and **broad ETF exposure** (SPY, QQQ, IWM, DIA, TLT, IEF, HYG, LQD, EEM, EFA) — all backfilled to 2000-01-01.
+Warehouse currently holds **~270k observations** across 47 series: US Treasury curve, short rates, US macro (CPI, unemployment), equity indices, US ETFs (SPY/QQQ/IWM/DIA/TLT/IEF/HYG/LQD/EEM/EFA), FX/commodities, energy spot prices (WTI/Brent/Henry Hub/refined products), **euro-area rates/FX/yield curve (ECB)**, **euro-area macro (HICP, unemployment, GDP via DBnomics)**, and **EM FX pairs (BRL/MXN/ZAR/CNY/INR/TRY via Frankfurter)** — all backfilled to 2000-01-01 (or earliest available).
 
 ## What's NOT built yet
 
-Macro-focused next sources (see [agent_research.md](agent_research.md), re-ranked for macro lens):
-- ECB Data Portal — euro area yield curve, EUR rates, FX
-- DBnomics — umbrella adapter for 93 non-US macro providers
-- AAII / NAAIM — equity sentiment (Bull/Bear spread)
-- Frankfurter — EM FX pairs
-
-Plus:
+- **AAII / NAAIM sentiment** — deferred. AAII's public XLS now returns HTTP 403 (Imperva bot block) and NAAIM's current XLSX URL returns 404. Both require either fragile page scraping or a paid feed; coming back to these only if there's a strong macro signal we miss elsewhere.
+- US Treasury direct (defensive cross-check vs FRED)
 - Daily cron (GitHub Actions workflow)
 - Tests
 
@@ -162,8 +161,9 @@ This workspace ships with custom Claude Code configuration under `.claude/`:
 - **[.claude/skills/README.md](.claude/skills/README.md)** — formatting conventions every `SKILL.md` in this workspace must follow (frontmatter shape, `$ARGUMENTS` usage, skill-vs-CLAUDE.md split).
 - **[.claude/skills/better_prompts/SKILL.md](.claude/skills/better_prompts/SKILL.md)** — `/better-prompts <raw idea>`. Refines a vague idea into a structured prompt (role/goal/context/instructions/constraints/output_format XML blocks) via a short clarifying-question loop. Use when sketching a new prompt you'll reuse — e.g. a prompt that asks a downstream agent to "chart X vs Y from the warehouse."
 - **[.claude/skills/fan_out_fan_in/SKILL.md](.claude/skills/fan_out_fan_in/SKILL.md)** — `/fan-out-fan-in <question>`. Dispatches 3–7 parallel sonnet research agents on distinct angles, then synthesizes their reports with one opus agent into a decision-ready brief. Good fit here for multi-angle CTG decisions like *"which source should we add next?"*, *"long vs wide table for intraday?"*, or *"how should we run the daily cron — GitHub Actions, Supabase cron, or a small VM?"* — questions where you want a recommendation, not five separate reports.
+- **[.claude/skills/brand_chart/SKILL.md](.claude/skills/brand_chart/SKILL.md)** — `/brand-chart [target]`. Stamps the Clocktower logo (`creative_assets/ctg_logo.png`) as a bottom-right watermark on matplotlib charts. Use when writing a new chart or retrofitting existing notebooks/scripts so every chart in the project carries consistent branding. Pass a file path, `"all"`, or leave blank when branding a chart you're about to write inline.
 
-Skills are invoked as slash commands (e.g. `/better-prompts`, `/fan-out-fan-in`). Add new ones under `.claude/skills/<kebab-name>/SKILL.md` following the README conventions.
+Skills are invoked as slash commands (e.g. `/better-prompts`, `/fan-out-fan-in`, `/brand-chart`). Add new ones under `.claude/skills/<kebab-name>/SKILL.md` following the README conventions.
 
 ## Open design questions to revisit
 
