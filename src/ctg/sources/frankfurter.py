@@ -38,6 +38,8 @@ def fetch_observations(
     base, quote = _split(native_code)
     start = max(start or MIN_DATE, MIN_DATE)
     end = date.today()
+    if start > end:
+        return  # nothing to fetch — already up to date
     url = f"{BASE}/{start.isoformat()}..{end.isoformat()}"
     r = requests.get(url, params={"base": base, "symbols": quote}, timeout=30)
     r.raise_for_status()
